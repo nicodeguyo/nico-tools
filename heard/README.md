@@ -51,7 +51,7 @@ I first built this as Sharpen, a simpler hook, for my co-founder Melissa at Wall
 
 ## Get the next one
 
-New tools go out first in my weekly email, Value Prompt, the short version of what's new in AI and healthcare. [Get it here](https://niconeugebauer.beehiiv.com/subscribe?utm_source=github&utm_medium=tool&utm_campaign=heard).
+New tools go out first in my weekly email, Value Prompt, the short version of what's new in AI and healthcare. [Get it here](https://valueprompt.pages.dev/?utm_source=github&utm_medium=tool&utm_campaign=heard).
 
 ## License
 
