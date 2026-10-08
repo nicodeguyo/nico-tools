@@ -1,0 +1,14 @@
+{
+  "name": "nico-tools",
+  "owner": { "name": "Nico Neugebauer" },
+  "metadata": {
+    "description": "Free tools for building with Claude, each one used for real before it is handed over."
+  },
+  "plugins": [
+    {
+      "name": "heard",
+      "description": "Claude says back what you asked for before it starts.",
+      "source": "./heard"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "heard",
+  "version": "0.1.0",
+  "description": "Heard: Claude says back what you asked for before it starts, and a Sharpen button turns a rough draft into a clear prompt before you send it.",
+  "author": { "name": "Nico Neugebauer" },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "lessonsFile": {
+      "type": "string",
+      "title": "Lessons file",
+      "description": "Where Heard saves what it misheard, one line per lesson, after you say yes. Point it at a file in a private repository to keep your lessons in git.",
+      "default": "~/.claude/heard/lessons.md"
+    }
+  }
+}
