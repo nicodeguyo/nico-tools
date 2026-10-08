@@ -49,6 +49,10 @@ In use on my machine since October 7, 2026. The number I watch is how often I co
 
 I first built this as Sharpen, a simpler hook, for my co-founder Melissa at Wallace Stories, to get more out of the newest models without learning prompt structure. Heard is the general version, rebuilt as a mod. The rules follow Anthropic's prompting guides for its current models.
 
+## Get the next one
+
+New tools go out first in my weekly email, Value Prompt, the short version of what's new in AI and healthcare. [Get it here](https://niconeugebauer.beehiiv.com/subscribe?utm_source=github&utm_medium=tool&utm_campaign=heard).
+
 ## License
 
 Heard is free to use, change and share under the MIT license, in `LICENSE` at the root of this repository.
