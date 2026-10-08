@@ -72,16 +72,23 @@ export const HELPER_NOTE =
 
 export const withNote = (prompt: string) => `${HELPER_NOTE}\n\n${prompt}`
 
+// Only the lesson lines ("- ..."); a heading or note in the file stays out of the model's way.
+export const lessonLines = (text: string) =>
+  text
+    .split('\n')
+    .filter(line => line.trimStart().startsWith('- '))
+    .join('\n')
+
 export const briefContext = (rules: string, lessonsFile: string, lessons: string) => {
   const filled = rules.replaceAll('{{LESSONS_FILE}}', lessonsFile)
-  const saved = lessons.trim()
+  const saved = lessonLines(lessons)
   return saved === ''
     ? filled
     : `${filled}\n\nWhat this person meant before (their saved lessons, newest last):\n${saved}`
 }
 
 export const sharpenRequest = (rules: string, draft: string, lessons: string) => {
-  const saved = lessons.trim()
+  const saved = lessonLines(lessons)
   return [
     rules,
     saved === '' ? null : `What this person meant before (their saved lessons):\n${saved}`,

@@ -64,7 +64,8 @@ test('a rewrite that loses a path, link or code span is refused', () => {
   expect(keepsFacts(original, 'Goal: compare `src/cover.ts` and docs/brief.md with https://example.com/spec.')).toBe(true)
   expect(keepsFacts(original, 'Goal: compare the cover code with the spec.')).toBe(false)
   expect(cleanReply('```\nGoal: x\n```')).toBe('Goal: x')
-  expect(briefContext(RULES, '/l.md', '- a lesson')).toBe('RULES lessons go to /l.md\n\nWhat this person meant before (their saved lessons, newest last):\n- a lesson')
+  expect(briefContext(RULES, '/l.md', '# Heading\nA note.')).toBe('RULES lessons go to /l.md')
+  expect(briefContext(RULES, '/l.md', '# Heading\n- a lesson')).toBe('RULES lessons go to /l.md\n\nWhat this person meant before (their saved lessons, newest last):\n- a lesson')
 })
 
 test('Enter hands Claude the rules and saved lessons beside the words, which stay untouched', async ($, on) => {
