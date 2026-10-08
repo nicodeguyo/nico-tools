@@ -5,13 +5,18 @@ import {
   checkHelper,
   checkRequest,
   cleanReply,
+  FIRE,
+  hasQuestions,
   helperRequest,
   isFromSharpen,
   isPerson,
   keepsFacts,
+  learned,
+  lessons,
   readbackContext,
   sharpenPrefix,
   sharpenRequest,
+  touchesLessons,
   wantsReadback,
   withNote,
 } from './brief'
@@ -19,12 +24,19 @@ import {
 const isOff = atom({ plugin: 'heard', key: 'isOff' } as const, false)
 const isBusy = atom({ plugin: 'heard', key: 'isBusy' } as const, false)
 const isCheckDue = atom({ plugin: 'heard', key: 'isCheckDue' } as const, false)
+// The last reply's readback asked questions and Claude is waiting on the answers: the Fire button shows.
+const isWaiting = atom({ plugin: 'heard', key: 'isWaiting' } as const, false)
+// How many lessons the lessons file holds, as this session last read it.
+const lessonCount = atom({ plugin: 'heard', key: 'lessonCount' } as const, 0)
 
 const WEEK = 7 * 24 * 60 * 60 * 1000
 const DEFAULT_LESSONS = '~/.claude/heard/lessons.md'
 
 // The draft Sharpen last put in the prompt box: the message sent from it gets no second readback.
 let sharpened: string | null = null
+
+// A tool call in the turn now running wrote to the lessons file: its end announces the new lesson.
+let wroteLessons = false
 
 const readText = async ($: EngineInterface, path: string) => {
   try {
@@ -81,6 +93,24 @@ const runCheck = async ($: EngineInterface) => {
   void $.prompt.submit({ text: checkRequest($.plugin.root, last === 0 ? 'never' : day(last)) })
 }
 
+// Reads the lessons file into the row's count; after a turn that wrote to it, a toast shows the newest
+// lesson. Another session's lesson only updates the count, so each lesson is announced once, where it was saved.
+const refreshLessons = async ($: EngineInterface, announce: boolean) => {
+  const saved = lessons(await readText($, await lessonsFile($)))
+  const before = await read($, lessonCount)
+  await update($, lessonCount, () => saved.length)
+  const newest = saved.at(-1)
+  if (!announce || saved.length <= before || newest === undefined) return
+  const more = saved.length - before - 1
+  $.ui.toast(`Heard learned: ${learned(newest)}${more > 0 ? ` (and ${more} more)` : ''}`)
+}
+
+// The Fire button: the person takes every answer Claude recommended, in one press.
+const fire = async ($: EngineInterface) => {
+  await update($, isWaiting, () => false)
+  void $.prompt.submit({ text: FIRE, asUser: true })
+}
+
 const setOff = async ($: EngineInterface, off: boolean) => {
   await $.store.set('isOff', off)
   await update($, isOff, () => off)
@@ -104,6 +134,7 @@ export const register: Register = (on, options) => {
       if (last === 0) await $.store.set('lastCheck', now)
       else if (now - last > WEEK) await update($, isCheckDue, () => true)
     }
+    await refreshLessons($, false)
     return next(e)
   })
 
@@ -116,7 +147,11 @@ export const register: Register = (on, options) => {
     }
 
     const fromSharpen = sharpened !== null && isFromSharpen(e.text, sharpened)
-    if (isPerson(e.origin)) sharpened = null
+    if (isPerson(e.origin)) {
+      sharpened = null
+      // The person answered in their own words, so the Fire button has nothing left to answer.
+      await update($, isWaiting, () => false)
+    }
     if (fromSharpen || (await read($, isOff)) || !wantsReadback(e.text, e.origin)) return next(e)
 
     const path = await lessonsFile($)
@@ -147,6 +182,26 @@ export const register: Register = (on, options) => {
     return next({ ...e, prompt: isRewritten ? rewrite : withNote(e.prompt) })
   }).catch(($, e, next) => next(e))
 
+  // Notes, without changing anything, whether a tool call wrote to the lessons file.
+  on('tool.call', async ($, e, next) => {
+    const ran = await next(e)
+    if (ran.deny === undefined && ran.isError !== true && touchesLessons(e, await lessonsFile($))) wroteLessons = true
+    return ran
+  }).catch(($, e, next) => next(e))
+
+  // The end of each reply on the main loop: the lessons count (and a toast for a new lesson), and
+  // whether the reply waits on the person's answers. The reply itself is passed on unchanged.
+  on('turn.complete', async ($, e, next) => {
+    const result = await next(e)
+    if (e.agentId !== undefined) return result
+    const wrote = wroteLessons
+    wroteLessons = false
+    await refreshLessons($, wrote)
+    const waiting = e.reason === 'answer' && !(await read($, isOff)) && hasQuestions(e.answer)
+    await update($, isWaiting, () => waiting)
+    return result
+  }).catch(($, e, next) => next(e))
+
   on('command.run', { command: 'heard' }, async ($, e) => {
     const word = e.args.trim().toLowerCase()
     if (word === 'off') {
@@ -162,12 +217,14 @@ export const register: Register = (on, options) => {
       return { text: "Heard asked Claude to check Anthropic's prompting guides against its rules." }
     }
     const last = Number((await $.store.get('lastCheck')) ?? 0)
+    const count = await read($, lessonCount)
     return {
       text: [
         (await read($, isOff)) ? 'Heard is off. /heard on turns it back on.' : 'Heard is on.',
-        `Lessons are saved to ${await lessonsFile($)}.`,
+        `${count} ${count === 1 ? 'lesson' : 'lessons'} saved in ${await lessonsFile($)}.`,
         `Rules last checked: ${last === 0 ? 'never' : day(last)}.`,
         'Sharpen a draft with the button above the prompt box, or start a message with "s:". Start a message with "raw:" to send it without a readback.',
+        'When Claude stops to ask you questions, Fire takes the answer it recommended for each one.',
       ].join(' '),
     }
   })
@@ -179,9 +236,17 @@ export const register: Register = (on, options) => {
 
     const { Box, Button, Text } = $.ui.resolve(e)
     const [off, busy, due] = [await read($, isOff), await read($, isBusy), await read($, isCheckDue)]
+    const [count, waiting] = [await read($, lessonCount), (await read($, isWaiting)) && !off && !busy]
+    const label = busy
+      ? 'Heard is sharpening your draft…'
+      : off
+        ? 'Heard is off'
+        : ['Heard', count > 0 ? `${count} ${count === 1 ? 'lesson' : 'lessons'}` : '', waiting ? 'waiting on your call' : '']
+            .filter(part => part !== '')
+            .join(' · ')
     const mine = (
       <Box columnGap={1} flexWrap="wrap">
-        <Text dimColor>{busy ? 'Heard is sharpening your draft…' : off ? 'Heard is off' : 'Heard'}</Text>
+        <Text dimColor>{label}</Text>
         {!busy && (
           <Button
             key="sharpen"
@@ -189,6 +254,7 @@ export const register: Register = (on, options) => {
             onPress={async () => void sharpen($, (await $.prompt.read()).text)}
           />
         )}
+        {waiting && <Button key="fire" label="Fire: use your picks" onPress={() => fire($)} />}
         {off && <Button key="on" label="Turn on" dimColor onPress={() => setOff($, false)} />}
         {due && !off && <Text dimColor>· rules check due</Text>}
         {due && !off && <Button key="check" label="Check now" dimColor onPress={() => runCheck($)} />}

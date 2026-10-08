@@ -4,10 +4,14 @@ import { expect, mock, test } from 'claude-code/testing'
 import {
   checkHelper,
   cleanReply,
+  FIRE,
+  hasQuestions,
   isFromSharpen,
   keepsFacts,
+  learned,
   readbackContext,
   sharpenPrefix,
+  touchesLessons,
   wantsReadback,
 } from '../hooks/brief'
 
@@ -169,4 +173,137 @@ test('a recipe-style helper prompt is rewritten; a rewrite that drops a path fal
 
   await $.agent.spawn({ ...(spawn as object), prompt: 'Find the cover file and report back its path.' } as never)
   expect(started[2]).toBe('Find the cover file and report back its path.')
+})
+
+// A readback that waits on the person, as the rules shape it, and one that carries on.
+const ASKS = ['**Heard**', '- **Goal:** a launch plan for the new tote.', '- **Questions:** LinkedIn only, or every channel? I recommend LinkedIn only.'].join('\n')
+const CARRIES_ON = '**Heard:** the cover title gets 5 mm more space, done when it clears the edge.\n\nDone: the title now clears the edge.'
+const LESSONS_FILE = '/home/me/.claude/heard/lessons.md'
+const CRAMPED = '- 2026-10-07: when they say "cramped", they mean too close to the edge'
+const LOUD = '- 2026-10-08: when they say "loud", they mean too many colors'
+const turn = (answer: string, extra: object = {}) =>
+  ({ answer, durationMs: 1, isAborted: false, turnId: 't', reason: 'answer', ...extra }) as never
+const rowText = async (ui: { findAll: (q: { type: string }) => Promise<{ text: string }[]> }) =>
+  (await ui.findAll({ type: 'Text' })).map(found => found.text).join(' ')
+const buttons = async (ui: { findAll: (q: { type: string }) => Promise<{ key: string | undefined }[]> }) =>
+  (await ui.findAll({ type: 'Button' })).map(found => found.key)
+
+test('the kitchen replies count as a go-ahead; a real request that starts with one does not', () => {
+  for (const reply of ['Heard!', 'yes chef', 'Yes, chef.', 'heard, chef', 'oui chef', 'fire', 'Fire it!', 'fire away']) {
+    expect(wantsReadback(reply, PERSON)).toBe(false)
+  }
+  expect(wantsReadback('fire the old cover and draw a new one', PERSON)).toBe(true)
+  expect(wantsReadback('heard anything from the printer?', PERSON)).toBe(true)
+})
+
+test('a reply waits on the person only when its readback has a Questions line', () => {
+  expect(hasQuestions(ASKS)).toBe(true)
+  expect(hasQuestions('**Heard**\n**Questions:** which channel?')).toBe(true)
+  // The form a live reply used (evals/readback.mjs, 2026-10-08): a heading over numbered questions.
+  expect(hasQuestions('**Heard**\n\n**Questions**\n\n1. Which product?')).toBe(true)
+  expect(hasQuestions(CARRIES_ON)).toBe(false)
+  expect(hasQuestions('Questions about the cover are in the notes.')).toBe(false)
+})
+
+test('a saved lesson reads as spoken to the person, and only writes to the lessons file count', () => {
+  expect(learned(CRAMPED)).toBe('when you say "cramped", you mean too close to the edge')
+  expect(touchesLessons({ tool: 'Bash', command: `echo '${CRAMPED}' >> ~/.claude/heard/lessons.md` } as never, LESSONS_FILE)).toBe(true)
+  expect(touchesLessons({ tool: 'Edit', file_path: LESSONS_FILE } as never, LESSONS_FILE)).toBe(true)
+  expect(touchesLessons({ tool: 'Read', file_path: LESSONS_FILE } as never, LESSONS_FILE)).toBe(false)
+  expect(touchesLessons({ tool: 'Write', file_path: '/repo/notes/lessons.md' } as never, LESSONS_FILE)).toBe(false)
+})
+
+test('Fire shows while a readback waits on questions, and one press sends the picks as the person', async ($, on) => {
+  engine(on)
+  const sent: { text: string; origin: unknown; context: unknown }[] = []
+  on('fs.read', () => ({ value: RULES }) as never)
+  on('prompt.submit', ($, e) => {
+    sent.push({ text: e.text, origin: e.origin, context: e.context })
+    return { text: e.text, context: e.context }
+  })
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    let ui = await $.ui.mount({ ...BAND, surface } as never)
+    expect(await buttons(ui)).not.toContain('fire')
+    await ui.unmount()
+
+    // A helper's turn never raises the button; the main reply with questions does, and is passed on unchanged.
+    await $.turn.complete(turn(ASKS, { agentId: 'helper-1' }))
+    ui = await $.ui.mount({ ...BAND, surface } as never)
+    expect(await buttons(ui)).not.toContain('fire')
+    await ui.unmount()
+    expect((await $.turn.complete(turn(ASKS))).text).toBe(ASKS)
+
+    ui = await $.ui.mount({ ...BAND, surface } as never)
+    expect(await rowText(ui)).toContain('waiting on your call')
+    expect(await buttons(ui)).toContain('fire')
+    await ui.press({ key: 'fire' })
+    expect(await buttons(ui)).not.toContain('fire')
+    await ui.unmount()
+  }
+
+  const fired = sent.filter(entry => entry.text === FIRE)
+  expect(fired).toHaveLength(2)
+  // Sent as the person's words, from the plugin, so it gets no second readback.
+  expect(fired[0]?.origin).toEqual({ kind: 'plugin', name: 'heard', asUser: true })
+  expect(fired[0]?.context).toBe(undefined)
+})
+
+test('the person answering in their own words, or a reply that carries on, takes Fire away', async ($, on) => {
+  engine(on)
+  on('fs.read', () => ({ value: RULES }) as never)
+  on('prompt.submit', ($, e) => ({ text: e.text, context: e.context }))
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+
+  await $.turn.complete(turn(ASKS))
+  await $.prompt.submit({ text: 'every channel, please', wait: false, origin: PERSON })
+  let ui = await $.ui.mount({ ...BAND, surface: 'terminal' } as never)
+  expect(await buttons(ui)).not.toContain('fire')
+  await ui.unmount()
+
+  await $.turn.complete(turn(ASKS))
+  await $.turn.complete(turn(CARRIES_ON))
+  ui = await $.ui.mount({ ...BAND, surface: 'desktop' } as never)
+  expect(await buttons(ui)).not.toContain('fire')
+  await ui.unmount()
+})
+
+test('a lesson saved in this session pops up as "Heard learned", and the row counts the lessons', async ($, on) => {
+  engine(on)
+  let lessonsText = `# My lessons\n${CRAMPED}\n`
+  const toasts: string[] = []
+  on('fs.read', ($, e) => ({ value: e.path === LESSONS_FILE ? lessonsText : RULES }) as never)
+  on('tool.call', () => ({ result: 'ok' }) as never)
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+  on('ui.toast', ($, e) => {
+    toasts.push(e.text)
+    return { value: undefined } as never
+  })
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+
+  let ui = await $.ui.mount({ ...BAND, surface: 'terminal' } as never)
+  expect(await rowText(ui)).toContain('Heard · 1 lesson')
+  await ui.unmount()
+
+  // Another session saved a lesson: the count follows, with no pop-up here.
+  lessonsText += `${LOUD}\n`
+  await $.turn.complete(turn(CARRIES_ON))
+  expect(toasts).toEqual([])
+
+  // This session saves one: the end of its turn announces it.
+  await $.tool.call({ tool: 'Bash', command: `echo '- 2026-10-08: when they say "tight", they mean under 30 words' >> ${LESSONS_FILE}` } as never)
+  lessonsText += '- 2026-10-08: when they say "tight", they mean under 30 words\n'
+  await $.turn.complete(turn('Saved.'))
+  expect(toasts).toEqual(['Heard learned: when you say "tight", you mean under 30 words'])
+
+  ui = await $.ui.mount({ ...BAND, surface: 'desktop' } as never)
+  expect(await rowText(ui)).toContain('Heard · 3 lessons')
+  await ui.unmount()
+
+  // The next turn has nothing new to announce.
+  await $.turn.complete(turn(CARRIES_ON))
+  expect(toasts).toHaveLength(1)
 })

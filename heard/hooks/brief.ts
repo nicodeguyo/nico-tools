@@ -1,10 +1,12 @@
 // Heard's decisions that need no engine: which messages get a readback, the "s:" prefix, whether a
-// sent message is the one Sharpen wrote, the helper-prompt check, and the texts handed to the model.
+// sent message is the one Sharpen wrote, whether a reply waits on the person's answers, the lessons,
+// the helper-prompt check, and the texts handed to the model.
 // The rules themselves live in ../rules/, read at run time; nothing here restates them.
 
-// Bare confirmations and answers to a question: more of work already read back.
+// Bare confirmations and answers to a question: more of work already read back. The kitchen's own
+// replies count too: a cook answers the chef "Heard!" or "Yes, chef", and "Fire" starts the dish.
 const CONFIRMATION =
-  /^(y|yes|yep|yeah|yup|no|nope|ok|okay|k|sure|go|go ahead|do it|ship it|sounds good|looks good|lgtm|thanks|thank you|thx|ty|continue|proceed|approved|agreed|perfect|great|nice|cool|done|correct|[0-9]+|[a-d]|option [0-9a-d])$/
+  /^(y|yes|yep|yeah|yup|no|nope|ok|okay|k|sure|go|go ahead|do it|ship it|sounds good|looks good|lgtm|thanks|thank you|thx|ty|continue|proceed|approved|agreed|perfect|great|nice|cool|done|correct|heard|(?:yes|heard|oui),? chef|fire|fire it|fire away|[0-9]+|[a-d]|option [0-9a-d])$/
 
 // Only a person typing gets a readback: Enter at the prompt, or the Remote Control bridge. Scripts,
 // scheduled runs, other sessions and plugins are read as sent.
@@ -41,6 +43,15 @@ export const isFromSharpen = (sent: string, sharpened: string) => {
   return shared / drafted.size >= 0.6
 }
 
+// A reply waits on the person when its readback carries the Questions line the readback rules define
+// ("- **Questions:** ..."), as a list item or a line of its own.
+const QUESTIONS = /^[ \t]*(?:[-*][ \t]+)?\*\*Questions:?\*\*/m
+
+export const hasQuestions = (answer: string) => QUESTIONS.test(answer)
+
+// What the Fire button sends, as the person's own words: on a kitchen line "Fire!" starts the dish.
+export const FIRE = 'Fire: go with your recommended answer to each question, and start.'
+
 const OUTCOME =
   /\b(goal|outcome|success criteria|done when|acceptance|definition of done|report back|return (?:a|an|the|only|one)|deliver|expected output|so that|in order to|the aim)\b/i
 const STEP = /^\s*(?:\d+[.)]\s|step \d+\b)/i
@@ -72,12 +83,27 @@ export const HELPER_NOTE =
 
 export const withNote = (prompt: string) => `${HELPER_NOTE}\n\n${prompt}`
 
-// Only the lesson lines ("- ..."); a heading or note in the file stays out of the model's way.
-export const lessonLines = (text: string) =>
-  text
-    .split('\n')
-    .filter(line => line.trimStart().startsWith('- '))
-    .join('\n')
+// Only the lesson lines ("- ..."), newest last; a heading or note in the file stays out of the model's way.
+export const lessons = (text: string) => text.split('\n').filter(line => line.trimStart().startsWith('- '))
+
+export const lessonLines = (text: string) => lessons(text).join('\n')
+
+// A saved lesson as the person reads it in a toast: no bullet or date, and spoken to them
+// ("- 2026-10-07: when they say ..." becomes "when you say ...").
+export const learned = (line: string) =>
+  line
+    .trim()
+    .replace(/^-\s+/, '')
+    .replace(/^\d{4}-\d{2}-\d{2}:\s*/, '')
+    .replace(/\bthey (say|mean|ask|want)\b/gi, 'you $1')
+
+// Whether a tool call writes to the lessons file: its last two path segments appear in the call, so a
+// relative path or a shell append counts as well as an absolute one.
+export const touchesLessons = (call: { tool: string }, lessonsFile: string) => {
+  if (!['Edit', 'Write', 'Bash'].includes(call.tool)) return false
+  const tail = lessonsFile.split('/').filter(Boolean).slice(-2).join('/')
+  return tail !== '' && JSON.stringify(call).includes(tail)
+}
 
 export const readbackContext = (rules: string, lessonsFile: string, lessons: string) => {
   const filled = rules.replaceAll('{{LESSONS_FILE}}', lessonsFile)

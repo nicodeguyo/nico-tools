@@ -1,5 +1,5 @@
 declare module 'claude-code' {
   interface PluginState {
-    heard: { isOff: boolean; isBusy: boolean; isCheckDue: boolean }
+    heard: { isOff: boolean; isBusy: boolean; isCheckDue: boolean; isWaiting: boolean; lessonCount: number }
   }
 }
