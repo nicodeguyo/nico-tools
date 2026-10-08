@@ -2,7 +2,6 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import {
-  briefContext,
   checkHelper,
   checkRequest,
   cleanReply,
@@ -10,9 +9,10 @@ import {
   isFromSharpen,
   isPerson,
   keepsFacts,
+  readbackContext,
   sharpenPrefix,
   sharpenRequest,
-  wantsBrief,
+  wantsReadback,
   withNote,
 } from './brief'
 
@@ -23,7 +23,7 @@ const isCheckDue = atom({ plugin: 'heard', key: 'isCheckDue' } as const, false)
 const WEEK = 7 * 24 * 60 * 60 * 1000
 const DEFAULT_LESSONS = '~/.claude/heard/lessons.md'
 
-// The draft Sharpen last put in the prompt box: the message sent from it gets no second Brief.
+// The draft Sharpen last put in the prompt box: the message sent from it gets no second readback.
 let sharpened: string | null = null
 
 const readText = async ($: EngineInterface, path: string) => {
@@ -117,10 +117,10 @@ export const register: Register = (on, options) => {
 
     const fromSharpen = sharpened !== null && isFromSharpen(e.text, sharpened)
     if (isPerson(e.origin)) sharpened = null
-    if (fromSharpen || (await read($, isOff)) || !wantsBrief(e.text, e.origin)) return next(e)
+    if (fromSharpen || (await read($, isOff)) || !wantsReadback(e.text, e.origin)) return next(e)
 
     const path = await lessonsFile($)
-    const context = briefContext(await rules($, 'brief'), path, await readText($, path))
+    const context = readbackContext(await rules($, 'brief'), path, await readText($, path))
     return next({ ...e, context: [...(e.context ?? []), context] })
   }).catch(($, e, next) => next(e))
 
@@ -151,11 +151,11 @@ export const register: Register = (on, options) => {
     const word = e.args.trim().toLowerCase()
     if (word === 'off') {
       await setOff($, true)
-      return { text: 'Heard is off on this machine: no Briefs and no helper checks. Sharpen still works. /heard on turns it back on.' }
+      return { text: 'Heard is off on this machine: no readbacks and no helper checks. Sharpen still works. /heard on turns it back on.' }
     }
     if (word === 'on') {
       await setOff($, false)
-      return { text: 'Heard is on: Claude reads each request back as a Brief before it starts.' }
+      return { text: 'Heard is on: Claude reads each request back, headed "Heard", before it starts.' }
     }
     if (word === 'check') {
       await runCheck($)
@@ -167,7 +167,7 @@ export const register: Register = (on, options) => {
         (await read($, isOff)) ? 'Heard is off. /heard on turns it back on.' : 'Heard is on.',
         `Lessons are saved to ${await lessonsFile($)}.`,
         `Rules last checked: ${last === 0 ? 'never' : day(last)}.`,
-        'Sharpen a draft with the button above the prompt box, or start a message with "s:". Start a message with "raw:" to send it without a Brief.',
+        'Sharpen a draft with the button above the prompt box, or start a message with "s:". Start a message with "raw:" to send it without a readback.',
       ].join(' '),
     }
   })

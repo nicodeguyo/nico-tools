@@ -1,6 +1,6 @@
 Rewrite the prompt below so a capable model gets it right on the first try. Current models do their best work from a clear outcome, the reason behind it, a fixed scope and an observable finish line, with the method left to them.
 
-What the rewrite carries, using the lines of a Brief:
+What the rewrite carries:
 - **Goal:** the outcome, not the steps to reach it.
 - **Why:** who it serves and what goes wrong without it.
 - **Scope:** what is in and what is out. For open work (research, ideas, design), how wide to look.

@@ -1,12 +1,12 @@
-// Heard's decisions that need no engine: which messages get a Brief, the "s:" prefix, whether a
+// Heard's decisions that need no engine: which messages get a readback, the "s:" prefix, whether a
 // sent message is the one Sharpen wrote, the helper-prompt check, and the texts handed to the model.
 // The rules themselves live in ../rules/, read at run time; nothing here restates them.
 
-// Bare confirmations and answers to a question: more of work already briefed.
+// Bare confirmations and answers to a question: more of work already read back.
 const CONFIRMATION =
   /^(y|yes|yep|yeah|yup|no|nope|ok|okay|k|sure|go|go ahead|do it|ship it|sounds good|looks good|lgtm|thanks|thank you|thx|ty|continue|proceed|approved|agreed|perfect|great|nice|cool|done|correct|[0-9]+|[a-d]|option [0-9a-d])$/
 
-// Only a person typing gets a Brief: Enter at the prompt, or the Remote Control bridge. Scripts,
+// Only a person typing gets a readback: Enter at the prompt, or the Remote Control bridge. Scripts,
 // scheduled runs, other sessions and plugins are read as sent.
 const PEOPLE = new Set(['composer', 'bridge'])
 
@@ -15,7 +15,7 @@ export const isPerson = (origin: { kind: string }) => PEOPLE.has(origin.kind)
 export const normalize = (text: string) =>
   text.replace(/\s+/g, ' ').trim().toLowerCase().replace(/[\s.!?]+$/, '')
 
-export const wantsBrief = (text: string, origin: { kind: string }) => {
+export const wantsReadback = (text: string, origin: { kind: string }) => {
   if (!isPerson(origin)) return false
   const norm = normalize(text)
   if (norm === '' || norm.startsWith('raw:') || norm.startsWith('/')) return false
@@ -30,7 +30,7 @@ export const sharpenPrefix = (text: string): string | null =>
 
 const words = (text: string) => new Set(normalize(text).split(' ').filter(word => word.length > 2))
 
-// A message sent from Sharpen's draft, edited or not, already carries a Brief's lines. Most of
+// A message sent from Sharpen's draft, edited or not, already carries a readback's lines. Most of
 // the draft's words still there means it is that draft.
 export const isFromSharpen = (sent: string, sharpened: string) => {
   const drafted = words(sharpened)
@@ -79,7 +79,7 @@ export const lessonLines = (text: string) =>
     .filter(line => line.trimStart().startsWith('- '))
     .join('\n')
 
-export const briefContext = (rules: string, lessonsFile: string, lessons: string) => {
+export const readbackContext = (rules: string, lessonsFile: string, lessons: string) => {
   const filled = rules.replaceAll('{{LESSONS_FILE}}', lessonsFile)
   const saved = lessonLines(lessons)
   return saved === ''

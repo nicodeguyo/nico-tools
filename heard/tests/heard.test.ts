@@ -2,13 +2,13 @@ import type { On } from 'claude-code'
 import { expect, mock, test } from 'claude-code/testing'
 
 import {
-  briefContext,
   checkHelper,
   cleanReply,
   isFromSharpen,
   keepsFacts,
+  readbackContext,
   sharpenPrefix,
-  wantsBrief,
+  wantsReadback,
 } from '../hooks/brief'
 
 const PERSON = { kind: 'composer' } as const
@@ -33,14 +33,14 @@ const BAND = {
   props: { hasSurvey: false, isWorking: false, maxRows: 6, bodyColumns: 120, scroll: { offset: 0, bodyRows: 5 }, view: {} },
 } as const
 
-test('a Brief for real requests a person typed, nothing for confirmations, raw: or scripts', () => {
-  expect(wantsBrief('the cover title looks cramped, I do not like it', PERSON)).toBe(true)
-  expect(wantsBrief('Yes!', PERSON)).toBe(false)
-  expect(wantsBrief('go ahead', PERSON)).toBe(false)
-  expect(wantsBrief('2', PERSON)).toBe(false)
-  expect(wantsBrief('raw: just run the tests', PERSON)).toBe(false)
-  expect(wantsBrief('the cover title looks cramped', SCRIPT)).toBe(false)
-  expect(wantsBrief('fix it', { kind: 'peer' })).toBe(false)
+test('a readback for real requests a person typed, nothing for confirmations, raw: or scripts', () => {
+  expect(wantsReadback('the cover title looks cramped, I do not like it', PERSON)).toBe(true)
+  expect(wantsReadback('Yes!', PERSON)).toBe(false)
+  expect(wantsReadback('go ahead', PERSON)).toBe(false)
+  expect(wantsReadback('2', PERSON)).toBe(false)
+  expect(wantsReadback('raw: just run the tests', PERSON)).toBe(false)
+  expect(wantsReadback('the cover title looks cramped', SCRIPT)).toBe(false)
+  expect(wantsReadback('fix it', { kind: 'peer' })).toBe(false)
 })
 
 test('the s: prefix, and knowing a message came from Sharpen', () => {
@@ -64,8 +64,8 @@ test('a rewrite that loses a path, link or code span is refused', () => {
   expect(keepsFacts(original, 'Goal: compare `src/cover.ts` and docs/brief.md with https://example.com/spec.')).toBe(true)
   expect(keepsFacts(original, 'Goal: compare the cover code with the spec.')).toBe(false)
   expect(cleanReply('```\nGoal: x\n```')).toBe('Goal: x')
-  expect(briefContext(RULES, '/l.md', '# Heading\nA note.')).toBe('RULES lessons go to /l.md')
-  expect(briefContext(RULES, '/l.md', '# Heading\n- a lesson')).toBe('RULES lessons go to /l.md\n\nWhat this person meant before (their saved lessons, newest last):\n- a lesson')
+  expect(readbackContext(RULES, '/l.md', '# Heading\nA note.')).toBe('RULES lessons go to /l.md')
+  expect(readbackContext(RULES, '/l.md', '# Heading\n- a lesson')).toBe('RULES lessons go to /l.md\n\nWhat this person meant before (their saved lessons, newest last):\n- a lesson')
 })
 
 test('Enter hands Claude the rules and saved lessons beside the words, which stay untouched', async ($, on) => {
@@ -85,7 +85,7 @@ test('Enter hands Claude the rules and saved lessons beside the words, which sta
   expect(scripted.context).toBe(undefined)
 })
 
-test('/heard off stops the Brief and /heard on brings it back', async ($, on) => {
+test('/heard off stops the readback and /heard on brings it back', async ($, on) => {
   engine(on)
   on('fs.read', () => ({ value: RULES }) as never)
   on('prompt.submit', ($, e) => ({ text: e.text, context: e.context }))
@@ -97,7 +97,7 @@ test('/heard off stops the Brief and /heard on brings it back', async ($, on) =>
   expect((await $.prompt.submit({ text: 'make the guide better', wait: false, origin: PERSON })).context?.[0]).toContain('RULES')
 })
 
-test('Sharpen rewrites the draft in the box, and the message sent from it gets no second Brief', async ($, on) => {
+test('Sharpen rewrites the draft in the box, and the message sent from it gets no second readback', async ($, on) => {
   engine(on)
   const sharpened = 'Goal: the printing guide answers the three questions customers ask most. Success criteria: each answer is under 50 words.'
   const filled: string[] = []

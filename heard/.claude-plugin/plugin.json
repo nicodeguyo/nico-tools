@@ -1,6 +1,6 @@
 {
   "name": "heard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Heard: Claude says back what you asked for before it starts, and a Sharpen button turns a rough draft into a clear prompt before you send it.",
   "author": { "name": "Nico Neugebauer" },
   "license": "MIT",
