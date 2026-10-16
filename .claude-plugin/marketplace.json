@@ -1,6 +1,8 @@
 {
   "name": "nico-tools",
-  "owner": { "name": "Nico Neugebauer" },
+  "owner": {
+    "name": "Nico Neugebauer"
+  },
   "metadata": {
     "description": "Free tools for building with Claude, each one used for real before it is handed over."
   },
@@ -9,6 +11,11 @@
       "name": "heard",
       "description": "Claude says back what you asked for before it starts.",
       "source": "./heard"
+    },
+    {
+      "name": "slingshot",
+      "description": "Before a big job starts, Claude shows you the most ambitious version worth doing as a short plan, and you choose.",
+      "source": "./slingshot"
     }
   ]
 }
