@@ -16,6 +16,11 @@
       "name": "slingshot",
       "description": "Before a big job starts, Claude shows you the most ambitious version worth doing as a short plan, and you choose.",
       "source": "./slingshot"
+    },
+    {
+      "name": "yes-chef",
+      "description": "Before a big or fuzzy job starts, Claude reads it back, shows the most ambitious version worth doing, asks every question that would change the work, and hands you the exact prompt it will run from.",
+      "source": "./yes-chef"
     }
   ]
 }

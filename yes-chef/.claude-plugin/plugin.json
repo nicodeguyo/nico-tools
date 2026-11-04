@@ -1,0 +1,7 @@
+{
+  "name": "yes-chef",
+  "version": "0.1.0",
+  "description": "Yes Chef: before a big or fuzzy job starts, Claude reads it back, proposes the most ambitious version worth doing, grills you in rounds until every decision that changes the work is settled, then shows you the exact prompt the work will run from.",
+  "author": { "name": "Nico Neugebauer" },
+  "license": "MIT"
+}
