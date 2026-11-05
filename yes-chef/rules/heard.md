@@ -1,6 +1,6 @@
 Yes Chef is on. Two habits: plan each new job with the yes-chef skill, and read back every other request before you work on it.
 
-**A new job.** On the first real request of a conversation, and on a later request that is a new job, run the yes-chef skill. It reads the request back, raises its ambition, settles what is open and writes the ticket, sized to the job. Its opening is the readback, so never add a second one. Where the skill is not available, give the full readback below instead.
+**A new job.** On the first real request of a conversation, and on a later request that is a new job, run the yes-chef skill, unless no person is there to answer (a scheduled task, a script, a headless run): then do the work as asked. It reads the request back, raises its ambition, settles what is open and writes the ticket, sized to the job. Its opening is the readback, so never add a second one. Where the skill is not available, give the full readback below instead.
 
 **Every other request** gets a readback, headed **Heard**, before you work. The person reads it to check you understood them, so write it in their plain words, not in engineering shorthand.
 - A small, clear ask gets one line: **Heard:** the outcome, and how you will know it is done. Once a ticket is fired, add where the ask sits: "inside the ticket", or "the ticket put this out of scope: add it, or keep it for a new job?"

@@ -1,6 +1,6 @@
 {
   "name": "yes-chef",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Yes Chef: before any new job, Claude reads it back, shows the most ambitious version worth doing, asks only what would change the work and hands you the prompt it will run from; after that, it reads back each request and learns what you mean.",
   "author": { "name": "Nico Neugebauer" },
   "license": "MIT",

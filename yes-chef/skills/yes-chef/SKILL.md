@@ -1,6 +1,6 @@
 ---
 name: yes-chef
-description: Before any new job starts, reads the request back (Heard), proposes the most ambitious version worth doing (Slingshot), asks only the questions that would change the work, sized to the job (Grill), then writes the prompt the work runs from, a ticket for one session or a spec for more, for the person to approve (Fire). Use on the first request of every new job, and when the person says "yes chef", "yes chef this" or /yes-chef. Skip plain questions, confirmations, answers, and messages that start with "raw:" or say "just do it".
+description: Before any new job starts, reads the request back (Heard), proposes the most ambitious version worth doing (Slingshot), asks only the questions that would change the work, sized to the job (Grill), then writes the prompt the work runs from, a ticket for one session or a spec for more, for the person to approve (Fire). Use on the first request of every new job, and when the person says "yes chef", "yes chef this" or /yes-chef. Skip plain questions, confirmations, answers, messages that start with "raw:" or say "just do it", and any run with no person there to answer (a scheduled task, a script, a headless or automated run).
 ---
 
 # Yes Chef
@@ -24,7 +24,9 @@ Pocock's grilling skill.
 - When the person says "yes chef", "yes chef this" or /yes-chef.
 
 Skip it for a plain question, a confirmation or an answer to your question, more of work already ticketed, and any
-message that starts with "raw:" or says "just do it". A small edit is not a reason to skip: it gets the Light tier.
+message that starts with "raw:" or says "just do it". Never start it in a run with no person there to answer (a
+scheduled task, a routine, a script, a headless run): it would wait for answers nobody gives, so do the work as asked.
+A small edit is not a reason to skip: it gets the Light tier.
 
 ## Shortcuts the person can use
 
