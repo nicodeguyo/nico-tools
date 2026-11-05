@@ -41,13 +41,17 @@ On a restaurant line, the chef calls an order, the cook answers "Heard!", and "Y
 
 Answer `y` to add the marketplace, then pick the user scope so it works in every project. Your lessons go to `~/.claude/yes-chef/lessons.md`; to keep them in git, point **Lessons file** at a file in a private repository (`/config`, then Yes Chef).
 
-**Claude app (claude.ai, desktop, mobile).** Download this folder, zip `skills/yes-chef`, and upload it as a skill in Settings. Then paste `rules/heard.md` into your profile preferences, with `{{LESSONS_FILE}}` replaced by "memory" and `{{OTHER_HOMES}}` by "memory", so every chat gets the readback. Your phone uses the same account, so it picks both up.
+Everywhere else, one script makes the copies from this folder, so none is edited by hand. Download this repository, then run it from the repository's folder (it needs Node):
 
-**Codex.** Copy `skills/yes-chef` into `~/.codex/skills/yes-chef`, and paste `rules/heard.md` into `~/.codex/AGENTS.md`, with the placeholders filled in as above or with a lessons file of your own.
+**Claude app (claude.ai, desktop, mobile).** `node yes-chef/scripts/publish.mjs chat ~/Downloads/yes-chef` makes `yes-chef-skill.zip`, to upload as a skill in Settings, and `yes-chef-preferences.md`, to paste into your profile preferences so every chat gets the readback. Add `--lessons <your lessons file>` to copy your saved lessons in. Your phone uses the same account, so it picks both up.
 
-**One repository, for everyone who works in it.** Copy `skills/yes-chef` into the repository's `.claude/skills/yes-chef` and paste `rules/heard.md` into its `CLAUDE.md` or `AGENTS.md`. Cloud sessions and teammates get it with the code.
+**Codex.** `node yes-chef/scripts/publish.mjs codex --lessons <your lessons file>` puts the skill in `~/.codex/skills/yes-chef` and the readback rule in `~/.codex/AGENTS.md`, leaving the rest of that file alone.
+
+**One repository, for everyone who works in it.** `node yes-chef/scripts/publish.mjs repo <path to the repository>` puts the skill in its `.claude/skills/yes-chef` and the rule in its `CLAUDE.md`. Cloud sessions and teammates get it with the code.
 
 **A work computer.** Use any of the above. Yes Chef is plain text and makes no network calls, so nothing personal needs to be on that machine: give it a lessons file of its own.
+
+**Keeping copies current.** After you update this folder, run the same command again. `node yes-chef/scripts/publish.mjs check codex` (or `check repo <path>`) names any file that differs from the source.
 
 **With nothing installed,** paste this before a big request in any AI chat:
 
