@@ -1,7 +1,28 @@
 {
   "name": "yes-chef",
-  "version": "0.1.0",
-  "description": "Yes Chef: before a big or fuzzy job starts, Claude reads it back, proposes the most ambitious version worth doing, grills you in rounds until every decision that changes the work is settled, then shows you the exact prompt the work will run from.",
+  "version": "0.2.0",
+  "description": "Yes Chef: before any new job, Claude reads it back, shows the most ambitious version worth doing, asks only what would change the work and hands you the prompt it will run from; after that, it reads back each request and learns what you mean.",
   "author": { "name": "Nico Neugebauer" },
-  "license": "MIT"
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "lessonsFile": {
+      "type": "string",
+      "title": "Lessons file",
+      "description": "Where Yes Chef saves what you mean, one line per lesson, after you press Save. Point it at a file in a private repository to keep your lessons in git.",
+      "default": "~/.claude/yes-chef/lessons.md"
+    },
+    "otherHomes": {
+      "type": "string",
+      "title": "Other homes for a lesson",
+      "description": "Where a lesson goes when it is not about how you speak, in a few words. Claude names the home before you press Save.",
+      "default": "memory, for a fact about them rather than how they speak"
+    },
+    "helperRewrite": {
+      "type": "boolean",
+      "title": "Rewrite helper prompts",
+      "description": "Off: a helper agent given a step-by-step recipe gets a short note in front of its prompt, with no extra model call. On: a small model rewrites that prompt around its outcome first.",
+      "default": false
+    }
+  }
 }

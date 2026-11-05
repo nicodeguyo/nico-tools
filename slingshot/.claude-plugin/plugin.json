@@ -1,7 +1,0 @@
-{
-  "name": "slingshot",
-  "version": "0.1.0",
-  "description": "Slingshot: before a big job starts, Claude proposes its most ambitious version worth doing as a short plan, then asks whether to go slingshot or do what you asked.",
-  "author": { "name": "Nico Neugebauer" },
-  "license": "MIT"
-}

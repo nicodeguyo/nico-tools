@@ -8,18 +8,8 @@
   },
   "plugins": [
     {
-      "name": "heard",
-      "description": "Claude says back what you asked for before it starts.",
-      "source": "./heard"
-    },
-    {
-      "name": "slingshot",
-      "description": "Before a big job starts, Claude shows you the most ambitious version worth doing as a short plan, and you choose.",
-      "source": "./slingshot"
-    },
-    {
       "name": "yes-chef",
-      "description": "Before a big or fuzzy job starts, Claude reads it back, shows the most ambitious version worth doing, asks every question that would change the work, and hands you the exact prompt it will run from.",
+      "description": "Before any new job, Claude reads it back, shows the most ambitious version worth doing, asks only what would change the work and hands you the prompt it will run from; after that, it reads back each request and learns what you mean.",
       "source": "./yes-chef"
     }
   ]
