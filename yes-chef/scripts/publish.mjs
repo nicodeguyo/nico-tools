@@ -11,6 +11,9 @@
 //       your profile preferences (lessons are saved to memory there; the lines in --lessons are copied in)
 //   node yes-chef/scripts/publish.mjs check codex | repo <repository>
 //       exits 1, naming each file, when a copy differs from this source
+//   node yes-chef/scripts/publish.mjs check chat
+//       on a Mac with the Claude desktop app: compares the copy of your claude.ai account's skills that the app keeps
+//       with this source, and names an old Slingshot still uploaded
 //
 // The rule sits between two marker lines in AGENTS.md or CLAUDE.md, so the rest of that file is never touched. The
 // opening marker records the blanks it was filled with, so `check` can rebuild exactly what should be there.
@@ -89,6 +92,39 @@ const drift = ({ skillDir, ruleFile }) => {
   return found
 }
 
+// The Claude desktop app keeps a copy of the skills uploaded to your claude.ai account. Its frontmatter is rewritten
+// with quotes on upload, so the name and description are compared as values and the rest word for word.
+const parse = text => {
+  const match = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
+  const field = name => (match?.[1].match(new RegExp(`^${name}:\\s*(.*)$`, 'm'))?.[1] ?? '').trim().replace(/^"(.*)"$/, '$1').replaceAll('\\"', '"')
+  return { name: field('name'), description: field('description'), body: (match?.[2] ?? text).trim() }
+}
+const chatDrift = () => {
+  const base = join(homedir(), 'Library', 'Application Support', 'Claude', 'local-agent-mode-sessions', 'skills-plugin')
+  if (!existsSync(base)) return ['No claude.ai skills found on this Mac (the Claude desktop app keeps them here once you have used it).']
+  const found = []
+  const source = parse(readFileSync(join(skill, 'SKILL.md'), 'utf8'))
+  let seen = 0
+  for (const account of readdirSync(base)) {
+    for (const org of existsSync(join(base, account)) && statSync(join(base, account)).isDirectory() ? readdirSync(join(base, account)) : []) {
+      const skills = join(base, account, org, 'skills')
+      if (!existsSync(skills)) continue
+      for (const old of ['slingshot', 'heard']) {
+        if (existsSync(join(skills, old))) found.push(`An old "${old}" skill is still uploaded to claude.ai: remove it in Settings.`)
+      }
+      const copy = join(skills, 'yes-chef', 'SKILL.md')
+      if (!existsSync(copy)) continue
+      seen++
+      const uploaded = parse(readFileSync(copy, 'utf8'))
+      if (uploaded.description !== source.description || uploaded.body !== source.body) {
+        found.push('Your claude.ai Yes Chef is an older version: upload the new yes-chef-skill.zip in Settings (publish.mjs chat makes it).')
+      }
+    }
+  }
+  if (seen === 0) found.push('Yes Chef is not uploaded to claude.ai yet (or the desktop app has not synced it).')
+  return [...new Set(found)]
+}
+
 if (command === 'codex' || command === 'repo') {
   const repo = positional[0]
   if (command === 'repo' && repo === undefined) throw new Error('Name the repository: publish.mjs repo <path>')
@@ -113,6 +149,11 @@ if (command === 'codex' || command === 'repo') {
   ].filter(part => part !== null).join('\n\n')
   writeFileSync(join(out, 'yes-chef-preferences.md'), `${text}\n`)
   console.log(`Upload ${zip} as a skill in claude.ai Settings (replace any older Yes Chef or Slingshot), and paste ${join(out, 'yes-chef-preferences.md')} into your profile preferences.`)
+} else if (command === 'check' && positional[0] === 'chat') {
+  const found = chatDrift()
+  for (const line of found) console.log(line)
+  console.log(found.length === 0 ? 'Your claude.ai copy matches the source.' : `${found.length} problem${found.length === 1 ? '' : 's'} with your claude.ai skills.`)
+  process.exit(found.length === 0 ? 0 : 1)
 } else if (command === 'check') {
   const found = drift(targets(positional[0], positional[1]))
   for (const line of found) console.log(line)

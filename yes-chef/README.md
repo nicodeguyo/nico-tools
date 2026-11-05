@@ -51,7 +51,9 @@ Everywhere else, one script makes the copies from this folder, so none is edited
 
 **A work computer.** Use any of the above. Yes Chef is plain text and makes no network calls, so nothing personal needs to be on that machine: give it a lessons file of its own.
 
-**Keeping copies current.** After you update this folder, run the same command again. `node yes-chef/scripts/publish.mjs check codex` (or `check repo <path>`) names any file that differs from the source.
+**Keeping copies current.** After you update this folder, run the same command again. `node yes-chef/scripts/publish.mjs check codex` (or `check repo <path>`) names any file that differs from the source, and on a Mac with the Claude desktop app, `check chat` says whether the Yes Chef on your claude.ai account is current and whether an old Slingshot or Heard is still uploaded.
+
+**One copy per app, never two.** Claude Code gets Yes Chef from the plugin, Codex from `~/.codex`, and claude.ai from your account. Don't also copy it into a repository you open with the plugin installed, or Claude sees two skills of the same name. In the Claude desktop app's Code tab, the skills on your claude.ai account load beside the plugin's; keep both current and they are the same version.
 
 **With nothing installed,** paste this before a big request in any AI chat:
 
