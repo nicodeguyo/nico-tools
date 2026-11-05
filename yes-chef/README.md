@@ -43,7 +43,7 @@ Answer `y` to add the marketplace, then pick the user scope so it works in every
 
 Everywhere else, one script makes the copies from this folder, so none is edited by hand. Download this repository, then run it from the repository's folder (it needs Node):
 
-**Claude app (claude.ai, desktop, mobile).** `node yes-chef/scripts/publish.mjs chat ~/Downloads/yes-chef` makes `yes-chef-skill.zip`, to upload as a skill in Settings, and `yes-chef-preferences.md`, to paste into your profile preferences so every chat gets the readback. Add `--lessons <your lessons file>` to copy your saved lessons in. Your phone uses the same account, so it picks both up.
+**Claude app (claude.ai, desktop, mobile).** `node yes-chef/scripts/publish.mjs chat ~/Downloads/yes-chef` makes `yes-chef-skill.zip`, to upload under **Customize → Skills → + → Create skill → Upload a skill** (skills need **Code execution and file creation** on, under **Settings → Capabilities**), and `yes-chef-preferences.md`, to paste into **Settings → Your Claude → Instructions** so every chat gets the readback. Add `--lessons <your lessons file>` to copy your saved lessons in. Your phone uses the same account, so it picks both up.
 
 **Codex.** `node yes-chef/scripts/publish.mjs codex --lessons <your lessons file>` puts the skill in `~/.codex/skills/yes-chef` and the readback rule in `~/.codex/AGENTS.md`, leaving the rest of that file alone.
 

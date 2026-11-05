@@ -8,7 +8,7 @@
 //       <repository>/.claude/skills/yes-chef, and the rule inside <repository>/CLAUDE.md
 //   node yes-chef/scripts/publish.mjs chat <folder> [--lessons <file>]
 //       <folder>/yes-chef-skill.zip to upload in claude.ai Settings, and <folder>/yes-chef-preferences.md to paste into
-//       your profile preferences (lessons are saved to memory there; the lines in --lessons are copied in)
+//       Settings > Your Claude > Instructions (lessons are saved to memory there; the lines in --lessons are copied in)
 //   node yes-chef/scripts/publish.mjs check codex | repo <repository>
 //       exits 1, naming each file, when a copy differs from this source
 //   node yes-chef/scripts/publish.mjs check chat
@@ -148,7 +148,7 @@ if (command === 'codex' || command === 'repo') {
     lines.length === 0 ? null : `What I meant before (my saved lessons, newest last):\n${lines.join('\n')}`,
   ].filter(part => part !== null).join('\n\n')
   writeFileSync(join(out, 'yes-chef-preferences.md'), `${text}\n`)
-  console.log(`Upload ${zip} as a skill in claude.ai Settings (replace any older Yes Chef or Slingshot), and paste ${join(out, 'yes-chef-preferences.md')} into your profile preferences.`)
+  console.log(`In claude.ai, upload ${zip} under Customize > Skills > + > Create skill > Upload a skill (delete any older Yes Chef, Slingshot or Heard first), and paste ${join(out, 'yes-chef-preferences.md')} into Settings > Your Claude > Instructions.`)
 } else if (command === 'check' && positional[0] === 'chat') {
   const found = chatDrift()
   for (const line of found) console.log(line)
